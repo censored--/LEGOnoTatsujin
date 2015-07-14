@@ -25,6 +25,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
     private SurfaceHolder holder;
     private float x, y;
     final int offset = 105;
+    static final public int SCROLL_SPEED = 3;
     private Paint pBaseLine,pTapPoint,pInternalBlock,pBlock;
     private int[] separators;
     public List<Block> blocks;
@@ -121,7 +122,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
             c.drawRect(block.start, y / 2, block.end, y * 3 / 4, pInternalBlock);
             c.drawRect(block.start, y / 2, block.end, y * 3 / 4, pBlock);
         }
-        c.drawRect(105,y/2,210,y*3/4,pTapPoint);
+        c.drawRect(offset,y/2,offset*2,y*3/4,pTapPoint);
         holder.unlockCanvasAndPost(c);
     }
 
@@ -131,7 +132,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
             @Override
             public void run() {
                 for (int k = 0; k < separators.length; k++) {
-                    separators[k] = (separators[k] - 3 < 0) ? ((int) x + separators[k] - 3) : (separators[k] - 3);
+                    separators[k] = (separators[k] - SCROLL_SPEED < 0) ? ((int) x + separators[k] - SCROLL_SPEED) : (separators[k] - SCROLL_SPEED);
                 }
                 try {
                     checkBlocks();
@@ -148,11 +149,11 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
         synchronized (blocks) {
             List<Block> removelist = new ArrayList<>();
             for (Block block : blocks) {
-                if (block.end - 3 < 0)
+                if (block.end - SCROLL_SPEED < 0)
                     removelist.add(block);
                 else {
-                    block.start -= 3;
-                    block.end -= 3;
+                    block.start -= SCROLL_SPEED;
+                    block.end -= SCROLL_SPEED;
                 }
             }
             for (Block removeblock : removelist)
