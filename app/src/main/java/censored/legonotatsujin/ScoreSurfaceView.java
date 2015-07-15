@@ -25,14 +25,14 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
     private SurfaceHolder holder;
     private float x, y;
     final int offset = 105;
-    static final public int SCROLL_SPEED = 3;
+    final float SCROLL_SPEED = 105 / 10;
     private Paint pBaseLine,pTapPoint,pInternalBlock,pBlock;
-    private int[] separators;
+    private float[] separators;
     public List<Block> blocks;
     static public class Block {
         static public final int offset = 105;
-        public int blockSize,start,end;
-        public Block(int blocksize,int startPoint){
+        public float blockSize,start,end;
+        public Block(int blocksize,float startPoint){
             start = startPoint;
             end = offset * blocksize + startPoint;
             blockSize = blocksize;
@@ -81,7 +81,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
         pInternalBlock.setStyle(Paint.Style.FILL);
         pInternalBlock.setColor(Color.WHITE);
 
-        separators = new int[10];
+        separators = new float[10];
         for (int k = 0; k < separators.length; k++){
             separators[k] = offset*k;
         }
@@ -113,7 +113,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
         c.drawColor(Color.WHITE);
         c.drawLine(0, y / 2, x, y / 2, pBaseLine);
         c.drawLine(0, y * 3 / 4, x, y * 3 / 4,pBaseLine);
-        for (int separator : separators)
+        for (float separator : separators)
             c.drawLine(separator,y/2,separator,y*3/4,pBaseLine);
         for (Block block : blocks) {
             for (int k = 0; k < block.blockSize; k++) {
@@ -122,7 +122,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
             c.drawRect(block.start, y / 2, block.end, y * 3 / 4, pInternalBlock);
             c.drawRect(block.start, y / 2, block.end, y * 3 / 4, pBlock);
         }
-        c.drawRect(offset,y/2,offset*2,y*3/4,pTapPoint);
+        c.drawRect(105,y/2,210,y*3/4,pTapPoint);
         holder.unlockCanvasAndPost(c);
     }
 
@@ -132,7 +132,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
             @Override
             public void run() {
                 for (int k = 0; k < separators.length; k++) {
-                    separators[k] = (separators[k] - SCROLL_SPEED < 0) ? ((int) x + separators[k] - SCROLL_SPEED) : (separators[k] - SCROLL_SPEED);
+                    separators[k] = (separators[k] - SCROLL_SPEED < 0) ? ( x + separators[k] - SCROLL_SPEED) : (separators[k] - SCROLL_SPEED);
                 }
                 try {
                     checkBlocks();
@@ -164,7 +164,7 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
     public void addBlock(int blocksize){
         synchronized (blocks){
             int nearestSeparator = 0;
-            int distance = Math.abs(separators[0] - offset);
+            float distance = Math.abs(separators[0] - offset);
             for (int k = 1; k < separators.length; k++)
                 if (Math.abs(separators[k] - offset)<distance){
                     distance = Math.abs(separators[k] - offset);

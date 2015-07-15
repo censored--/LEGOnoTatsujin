@@ -10,8 +10,8 @@
         android:layout_height="wrap_content">
         <censored.legonotatsujin.LEGOSurfaceView
             android:id="@+id/BlockView"
-            android:layout_width="160dp"
-            android:layout_height="140dp" />
+            android:layout_width="200dp"
+            android:layout_height="200dp" />
         <censored.legonotatsujin.ScoreSurfaceView
             android:id="@+id/ScoreView"
             android:layout_width="350dp"
