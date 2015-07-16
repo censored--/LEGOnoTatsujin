@@ -12,29 +12,31 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by censored on 2015/07/14.
- */
+
 public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder holder;
     private float x, y;
-    final int offset = 105;
-    final float SCROLL_SPEED = 105 / 10;
+    final float OFFSET = 210;
+    final float BLOCKX = 105;
+    float cursor;
+    final float SCROLL_SPEED =BLOCKX / 20;
     private Paint pBaseLine,pTapPoint,pInternalBlock,pBlock;
-    private float[] separators;
+    private double[] separators;
+    private boolean[] cells;
     public List<Block> blocks;
     static public class Block {
-        static public final int offset = 105;
         public float blockSize,start,end;
+        static public final int BLOCKX = 105;
         public Block(int blocksize,float startPoint){
             start = startPoint;
-            end = offset * blocksize + startPoint;
+            end = BLOCKX * blocksize + startPoint;
             blockSize = blocksize;
         }
     }
@@ -81,11 +83,13 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
         pInternalBlock.setStyle(Paint.Style.FILL);
         pInternalBlock.setColor(Color.WHITE);
 
-        separators = new float[10];
+        separators = new double[LEGOSurfaceView.CELL_WIDTH *LEGOSurfaceView.CELL_HEIGHT];
+        cells = new boolean[LEGOSurfaceView.CELL_WIDTH * LEGOSurfaceView.CELL_HEIGHT];
         for (int k = 0; k < separators.length; k++){
-            separators[k] = offset*k;
+            separators[k] = SCROLL_SPEED * 3000 / 20 + OFFSET + k * BLOCKX;
+            cells[k] = false;
         }
-
+        cursor = - SCROLL_SPEED * 3000/20;
         blocks = Collections.synchronizedList(new ArrayList<Block>());
     }
 
@@ -113,16 +117,19 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
         c.drawColor(Color.WHITE);
         c.drawLine(0, y / 2, x, y / 2, pBaseLine);
         c.drawLine(0, y * 3 / 4, x, y * 3 / 4,pBaseLine);
-        for (float separator : separators)
-            c.drawLine(separator,y/2,separator,y*3/4,pBaseLine);
+        for (double separator : separators) {
+            if (separator >= 0)
+                c.drawLine((float) separator, y / 2, (float) separator, y * 3 / 4, pBaseLine);
+        }
         for (Block block : blocks) {
             for (int k = 0; k < block.blockSize; k++) {
-                c.drawRect(block.start + offset / 5 + offset * k, y / 2 - offset / 5,block.start + offset * 4 / 5 + offset * k, y / 2, pBlock);
+                c.drawRect(block.start + BLOCKX / 5 + BLOCKX * k, y / 2 - BLOCKX / 5,
+                        block.start + BLOCKX * 4 / 5 + BLOCKX * k, y / 2, pBlock);
             }
             c.drawRect(block.start, y / 2, block.end, y * 3 / 4, pInternalBlock);
             c.drawRect(block.start, y / 2, block.end, y * 3 / 4, pBlock);
         }
-        c.drawRect(105,y/2,210,y*3/4,pTapPoint);
+        c.drawRect(OFFSET,y/2,OFFSET + BLOCKX,y*3/4,pTapPoint);
         holder.unlockCanvasAndPost(c);
     }
 
@@ -132,8 +139,9 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
             @Override
             public void run() {
                 for (int k = 0; k < separators.length; k++) {
-                    separators[k] = (separators[k] - SCROLL_SPEED < 0) ? ( x + separators[k] - SCROLL_SPEED) : (separators[k] - SCROLL_SPEED);
-                }
+                    separators[k] -= SCROLL_SPEED;
+            }
+                cursor += SCROLL_SPEED;
                 try {
                     checkBlocks();
                 } catch (Exception e) {
@@ -147,33 +155,39 @@ public class ScoreSurfaceView extends SurfaceView implements SurfaceHolder.Callb
 
     private void checkBlocks() {
         synchronized (blocks) {
-            List<Block> removelist = new ArrayList<>();
+            List<Block> removeList = new ArrayList<>();
             for (Block block : blocks) {
                 if (block.end - SCROLL_SPEED < 0)
-                    removelist.add(block);
+                    removeList.add(block);
                 else {
                     block.start -= SCROLL_SPEED;
                     block.end -= SCROLL_SPEED;
                 }
             }
-            for (Block removeblock : removelist)
-                blocks.remove(removeblock);
+            for (Block removeBlock : removeList)
+                blocks.remove(removeBlock);
         }
     }
 
-    public void addBlock(int blocksize){
-        synchronized (blocks){
-            int nearestSeparator = 0;
-            float distance = Math.abs(separators[0] - offset);
-            for (int k = 1; k < separators.length; k++)
-                if (Math.abs(separators[k] - offset)<distance){
-                    distance = Math.abs(separators[k] - offset);
-                    nearestSeparator = k;
+    public void addBlock(int blocksize) {
+        try {
+            synchronized (blocks) {
+                int nearestSeparator = Math.round(cursor / BLOCKX);
+                Log.d("addBlock", "cells[" + nearestSeparator + "]=" + cells[nearestSeparator]);
+                if (!cells[nearestSeparator]) {
+                    ScoreSurfaceView.Block block = new ScoreSurfaceView.Block(blocksize, (float) separators[nearestSeparator]);
+                    blocks.add(block);
+                    for (int k = 0; k < blocksize; k++)
+                        cells[nearestSeparator + k] = true;
+                }else if (!cells[nearestSeparator+1]){
+                    ScoreSurfaceView.Block block = new ScoreSurfaceView.Block(blocksize, (float) separators[nearestSeparator+1]);
+                    blocks.add(block);
+                    for (int k = 0; k < blocksize; k++)
+                        cells[nearestSeparator + 1 + k] = true;
                 }
-            if (blocks.isEmpty() || blocks.get(blocks.size()-1).end < Block.offset*3/2) {
-                ScoreSurfaceView.Block block = new ScoreSurfaceView.Block(blocksize,separators[nearestSeparator]);
-                blocks.add(block);
             }
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
 }

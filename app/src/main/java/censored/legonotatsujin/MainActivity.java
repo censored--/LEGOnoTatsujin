@@ -17,6 +17,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
     Button button2,button3,button4,button6;
     ScoreSurfaceView scoreSurfaceView;
+    LEGOSurfaceView BlockView;
     List<ScoreSurfaceView.Block> blocks;
     SurfaceHolder scoreSurfaceHolder;
     @Override
@@ -28,6 +29,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
         button4 = (Button) findViewById(R.id.button4);
         button6 = (Button) findViewById(R.id.button6);
         scoreSurfaceView = (ScoreSurfaceView) findViewById(R.id.ScoreView);
+        BlockView =(LEGOSurfaceView) findViewById(R.id.BlockView);
         blocks = scoreSurfaceView.blocks;
         scoreSurfaceHolder = scoreSurfaceView.getHolder();
         button2.setOnClickListener(this);
@@ -37,13 +39,13 @@ public class MainActivity extends Activity implements View.OnClickListener{
     }
     public void onClick(View v) {
         if (v == button2){
-            scoreSurfaceView.addBlock(2);
+            if (BlockView.addBlock(2))scoreSurfaceView.addBlock(2);
         } else if (v == button3){
-            scoreSurfaceView.addBlock(3);
+            if (BlockView.addBlock(3))scoreSurfaceView.addBlock(3);
         } else if (v == button4) {
-            scoreSurfaceView.addBlock(4);
+            if (BlockView.addBlock(4))scoreSurfaceView.addBlock(4);
         } else if (v == button6){
-            scoreSurfaceView.addBlock(6);
+            if (BlockView.addBlock(6))scoreSurfaceView.addBlock(6);
         }
     }
 
