@@ -27,11 +27,14 @@ public class LEGOSurfaceView extends SurfaceView implements SurfaceHolder.Callba
     private Paint pGrid,pLEGO,pSihlhouette,pCusor;
     final float OFFSETX = 60,OFFSETY = 60;
     final float BLOCKX = 30,BLOCKY = 36;
-    final float SCROLL_SPEED =  BLOCKX / 20;
+    final int BEATRATE = 25;
+    final float SCROLL_SPEED =  BLOCKX / BEATRATE;
     static final int CELL_WIDTH = 16,CELL_HEIGHT = 15;
     Block [][] cells;
     float[] cursor;
     List<Block> blocks;
+    public boolean scrollLocked;
+    public float direction;
 
     class Block{
         public float x,y;
@@ -85,6 +88,9 @@ public class LEGOSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
         pGrid = new Paint();
         pGrid.setColor(Color.rgb(200,200,200));
+
+        scrollLocked = false;
+        direction = 0;
 
     }
 
@@ -146,23 +152,46 @@ public class LEGOSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         executor.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                if (cursor[0] >= x - OFFSETX) {
-                    if (cursor[1] >= OFFSETY + BLOCKY) {
-                        cursor[0] += SCROLL_SPEED - (x - 2 * OFFSETX);
-                        cursor[1] -= BLOCKY;
-                    }
+                if (scrollLocked) {
+                    scroll(direction * 30 / 1000);
                 } else {
-                    cursor[0] += SCROLL_SPEED;
+                    if (cursor[0] >= x - OFFSETX) {
+                        if (cursor[1] >= OFFSETY + BLOCKY) {
+                            cursor[0] += SCROLL_SPEED - (x - 2 * OFFSETX);
+                            cursor[1] -= BLOCKY;
+                        }
+                    } else {
+                        cursor[0] += SCROLL_SPEED;
+                    }
                 }
                 draw();
             }
         }, 100, 20, TimeUnit.MILLISECONDS);
     }
 
+    public void scroll(double Direction){
+        if (scrollLocked) {
+            cursor[0] += Direction;
+            if (cursor[0] >= x - OFFSETX) {
+                if (cursor[1] >= OFFSETY + BLOCKY) {
+                    cursor[0] -= (x - 2 * OFFSETX);
+                    cursor[1] -= BLOCKY;
+                } else {
+                    cursor[0] = x - OFFSETX;
+                }
+            } else if (cursor[0] < 0) {
+                if (cursor[1] <= OFFSETY + BLOCKY * (CELL_HEIGHT - 1)) {
+                    cursor[0] += (x - 2 * OFFSETX);
+                    cursor[1] += BLOCKY;
+                }
+            }
+        }
+    }
+
     public boolean addBlock(int blocksize){
         try {
             synchronized (blocks) {
-                int nearestCellx = Math.round((cursor[0] - OFFSETX) / BLOCKX);
+                int nearestCellx = Math.round((cursor[0] - OFFSETX) / BLOCKX) - blocksize + 1;
                 int nearestCelly = Math.round((cursor[1] - OFFSETY) / BLOCKY);
                 if (nearestCellx >= 0 && nearestCellx + blocksize - 1 < CELL_WIDTH && cells[nearestCellx][nearestCelly] == null) {
                     Block block = new Block(blocksize, nearestCellx * BLOCKX + OFFSETX, nearestCelly * BLOCKY + OFFSETY);
